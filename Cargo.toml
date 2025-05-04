@@ -1,0 +1,24 @@
+[package]
+name = "rich-prompt"
+version = "0.1.0"
+edition = "2024"
+description = "A Rust CLI tool for rich prompts with file and directory selection."
+license = "MIT"
+authors = ["Mohamed Abdelwahed"]
+homepage = "https://github.com/sunduq-ai/rich-prompt"
+repository = "https://github.com/sunduq-ai/rich-prompt"
+readme = "README.md"
+keywords = ["cli", "prompt", "file selection", "directory selection", "llm"]
+categories = ["command-line-utilities"]
+publish = true
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+dialoguer = "0.11"
+anyhow = "1.0"
+walkdir = "2.4"
+log = "0.4"
+env_logger = "0.11.8"
+
+[dev-dependencies]
+tempfile = "3.8"

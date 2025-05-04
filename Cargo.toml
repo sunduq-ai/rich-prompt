@@ -8,7 +8,7 @@ authors = ["Mohamed Abdelwahed"]
 homepage = "https://github.com/sunduq-ai/rich-prompt"
 repository = "https://github.com/sunduq-ai/rich-prompt"
 readme = "README.md"
-keywords = ["cli", "prompt", "file selection", "directory selection", "llm"]
+keywords = ["cli", "prompt", "prompt-context", "file-selection", "llm"]
 categories = ["command-line-utilities"]
 publish = true
 

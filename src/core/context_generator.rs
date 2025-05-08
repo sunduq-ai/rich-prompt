@@ -61,9 +61,11 @@ pub fn format_output(output: &ContextOutput) -> String {
     result.push_str(&output.file_contents);
     result.push_str("</file_contents>");
 
-    result.push_str("\n\n<user_instructions>\n");
-    result.push_str(&output.user_instructions);
-    result.push_str("\n</user_instructions>");
+    if !output.user_instructions.is_empty() {
+        result.push_str("\n\n<user_instructions>\n");
+        result.push_str(&output.user_instructions);
+        result.push_str("\n</user_instructions>");
+    }
 
     result
 }

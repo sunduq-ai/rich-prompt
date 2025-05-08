@@ -1,7 +1,9 @@
 use crate::core::context_generator::{build_context_output, format_output};
 use crate::core::file_selector::select_files;
 use crate::domain::models::ContextConfig;
-use crate::infra::file_system::{generate_file_map, list_code_files, read_file_contents};
+use crate::infra::file_system::{
+    generate_file_map, list_code_files, list_code_files_with_gitignore, read_file_contents,
+};
 use crate::infra::logger::setup_logger;
 use crate::infra::output::write_output;
 use clap::{Parser, Subcommand};
@@ -22,14 +24,14 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     Generate {
-        #[arg(long)]
+        #[arg(long, default_value = ".")]
         path: String,
 
-        #[arg(long, default_value = ".java,.js,.go,.rs,.py,.toml,.yml")]
-        ext: String,
+        #[arg(long)]
+        ext: Option<String>,
 
-        #[arg(long, default_value = ".git,.venv,target")]
-        exclude: String,
+        #[arg(long)]
+        exclude: Option<String>,
 
         #[arg(long)]
         output: Option<String>,
@@ -39,6 +41,15 @@ pub enum Commands {
 
         #[arg(long)]
         prompt: Option<String>,
+
+        #[arg(long, default_value = ".git")]
+        exclude_version_control_dir: String,
+
+        #[arg(long, default_value = "true")]
+        apply_dot_git_ignore: bool,
+
+        #[arg(long, help = "Copy the output to the clipboard")]
+        clipboard_output: bool,
     },
 }
 
@@ -55,16 +66,25 @@ pub fn run() -> anyhow::Result<()> {
             output,
             auto,
             prompt,
+            exclude_version_control_dir,
+            apply_dot_git_ignore,
+            clipboard_output,
         } => {
             info!("Starting generate command");
             debug!(
-                "Command parameters: path={}, ext={}, exclude={}, output={:?}, auto={}, prompt={:?}",
-                path, ext, exclude, output, auto, prompt
+                "Command parameters: path={}, ext={:?}, exclude={:?}, output={:?}, auto={}, prompt={:?}, exclude_version_control_dir={}, apply_dot_git_ignore={}, clipboard_output={}",
+                path, ext, exclude, output, auto, prompt, exclude_version_control_dir, apply_dot_git_ignore, clipboard_output
             );
 
-            let extensions: Vec<&str> = ext.split(',').map(str::trim).collect();
-            let excludes: Vec<&str> = exclude.split(',').map(str::trim).collect();
+            let extensions: Vec<&str> = match &ext {
+                Some(ext_value) => ext_value.split(',').map(str::trim).collect(),
+                None => Vec::new(),
+            };
 
+            let excludes: Vec<&str> = match &exclude {
+                Some(exclude_value) => exclude_value.split(',').map(str::trim).collect(),
+                None => Vec::new(),
+            };
 
             let config = ContextConfig {
                 root_path: path.clone(),
@@ -73,6 +93,9 @@ pub fn run() -> anyhow::Result<()> {
                 output_path: output.clone(),
                 auto_select: auto,
                 user_prompt: prompt,
+                exclude_version_control_dir: exclude_version_control_dir,
+                apply_dot_git_ignore: apply_dot_git_ignore,
+                clipboard_output: clipboard_output,
             };
 
             generate_context(&config)?;
@@ -82,13 +105,21 @@ pub fn run() -> anyhow::Result<()> {
 }
 
 fn generate_context(config: &ContextConfig) -> anyhow::Result<()> {
-
     let extensions: Vec<&str> = config.extensions.iter().map(|s| s.as_str()).collect();
     let excludes: Vec<&str> = config.exclude_patterns.iter().map(|s| s.as_str()).collect();
 
-
     info!("Scanning for files in {}", config.root_path);
-    let available_files = list_code_files(&config.root_path, &extensions, &excludes)?;
+    let available_files = if config.apply_dot_git_ignore {
+        list_code_files_with_gitignore(
+            &config.root_path,
+            &extensions,
+            &excludes,
+            &config.exclude_version_control_dir,
+            config.apply_dot_git_ignore,
+        )?
+    } else {
+        list_code_files(&config.root_path, &extensions, &excludes)?
+    };
 
     if available_files.is_empty() {
         info!("No files found with the specified extensions");
@@ -96,7 +127,12 @@ fn generate_context(config: &ContextConfig) -> anyhow::Result<()> {
     }
 
     info!("Generating file map");
-    let file_map = generate_file_map(&config.root_path, &excludes)?;
+    let file_map = generate_file_map(
+        &config.root_path,
+        &excludes,
+        &config.exclude_version_control_dir,
+        config.apply_dot_git_ignore,
+    )?;
 
     info!("Selecting files");
     let selected_files = select_files(
@@ -110,7 +146,12 @@ fn generate_context(config: &ContextConfig) -> anyhow::Result<()> {
     let formatted_output = format_output(&output);
 
     info!("Writing output");
-    write_output(&output, &formatted_output, config.output_path.clone())
+    write_output(
+        &output,
+        &formatted_output,
+        config.output_path.clone(),
+        config.clipboard_output,
+    )
 }
 
 #[cfg(test)]
@@ -132,6 +173,11 @@ mod tests {
             "--auto",
             "--prompt",
             "Test prompt",
+            "--exclude-version-control-dir",
+            ".svn",
+            "--apply-dot-git-ignore",
+            "false",
+            "--clipboard-output",
         ])
         .unwrap();
 
@@ -142,13 +188,56 @@ mod tests {
                 exclude,
                 auto,
                 prompt,
+                exclude_version_control_dir,
+                apply_dot_git_ignore,
+                clipboard_output,
                 ..
             } => {
                 assert_eq!(path, "./src");
-                assert_eq!(ext, ".rs");
-                assert_eq!(exclude, ".git");
+                assert_eq!(ext, Some(".rs".to_string()));
+                assert_eq!(exclude, Some(".git".to_string()));
                 assert!(auto);
                 assert_eq!(prompt, Some("Test prompt".to_string()));
+                assert_eq!(exclude_version_control_dir, ".svn");
+                assert_eq!(apply_dot_git_ignore, false);
+                assert_eq!(clipboard_output, true);
+            }
+        }
+    }
+
+    #[test]
+    fn test_cli_parsing_with_optional_args() {
+        let cli = Cli::try_parse_from(&[
+            "rich-prompt",
+            "generate",
+            "--path",
+            "./src",
+            "--auto",
+            "--exclude-version-control-dir",
+            ".svn",
+        ])
+        .unwrap();
+
+        match cli.command {
+            Commands::Generate {
+                path,
+                ext,
+                exclude,
+                auto,
+                prompt,
+                exclude_version_control_dir,
+                apply_dot_git_ignore,
+                clipboard_output,
+                ..
+            } => {
+                assert_eq!(path, "./src");
+                assert_eq!(ext, None);
+                assert_eq!(exclude, None);
+                assert!(auto);
+                assert_eq!(prompt, None);
+                assert_eq!(exclude_version_control_dir, ".svn");
+                assert_eq!(apply_dot_git_ignore, true);
+                assert_eq!(clipboard_output, false);
             }
         }
     }

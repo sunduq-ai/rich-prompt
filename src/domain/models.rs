@@ -14,6 +14,9 @@ pub struct ContextConfig {
     pub output_path: Option<String>,
     pub auto_select: bool,
     pub user_prompt: Option<String>,
+    pub exclude_version_control_dir: String,
+    pub apply_dot_git_ignore: bool,
+    pub clipboard_output: bool,
 }
 
 #[derive(Debug)]

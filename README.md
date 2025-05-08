@@ -11,9 +11,17 @@ A Rust CLI tool that transforms your project files into perfectly formatted cont
 - 🚫 **Exclusion Patterns** - Easily ignore directories like `.git`, `node_modules`, etc.
 - 🏗️ **Structured Output** - Generate well-formatted context blocks optimized for LLMs
 - 💬 **Custom Instructions** - Include your specific prompts within the context block
-- 📤 **Flexible Output** - Print to console or save to file with a simple flag
+- 📤 **Flexible Output** - Print to console, save to file, or copy to clipboard with a simple flag
+- 📋 **Clipboard Support** - Copy generated content directly to your clipboard for easy pasting
+- 🔄 **GitIgnore Support** - Respect existing `.gitignore` rules when scanning files
 
 ## 📦 Installation
+
+### 📥 From Cargo
+
+```bash
+cargo install rich-prompt
+```
 
 ### 🔧 From Source
 
@@ -21,12 +29,6 @@ A Rust CLI tool that transforms your project files into perfectly formatted cont
 git clone https://github.com/username/rich-prompt.git
 cd rich-prompt
 cargo install --path .
-```
-
-### 📥 From Cargo
-
-```bash
-cargo install rich-prompt
 ```
 
 ## 🎮 Usage
@@ -42,11 +44,14 @@ rich-prompt generate --path /path/to/project
 | Option | Description |
 |--------|-------------|
 | `--path` | 📂 Root directory to scan (required) |
-| `--ext` | 📑 File extensions to include (default: `.java,.js,.go,.rs,.py,.toml,.yml`) |
-| `--exclude` | 🚫 Patterns to exclude (default: `.git,.venv,target`) |
+| `--ext` | 📑 File extensions to include (optional, include all files if not specified) |
+| `--exclude` | 🚫 Patterns to exclude (optional, exclude none if not specified) |
 | `--output` | 💾 File path to save output (optional) |
 | `--auto` | 🤖 Skip interactive selection, include all files |
 | `--prompt` | 💬 User prompt to include in context block |
+| `--exclude-version-control-dir` | 📂 Version control directory to exclude (default: `.git`) |
+| `--apply-dot-git-ignore` | 🔍 Whether to apply .gitignore rules (default: `true`) |
+| `--clipboard-output` | 📋 Copy the output to the clipboard |
 | `--verbose` | 📝 Increase logging verbosity (-v, -vv, -vvv) |
 
 ### 🌟 Examples
@@ -67,6 +72,12 @@ rich-prompt generate --path ./frontend --ext .js,.ts --exclude node_modules --ou
 
 ```bash
 rich-prompt generate --path ./src --prompt "Optimize this code for performance and reduce memory usage"
+```
+
+#### Copy the output directly to clipboard:
+
+```bash
+rich-prompt generate --path ./src --auto --clipboard-output
 ```
 
 ## 📋 Output Format

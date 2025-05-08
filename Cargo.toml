@@ -1,6 +1,6 @@
 [package]
 name = "rich-prompt"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "A Rust CLI tool for rich prompts with file and directory selection."
 license = "MIT"
@@ -19,6 +19,7 @@ anyhow = "1.0"
 walkdir = "2.4"
 log = "0.4"
 env_logger = "0.11.8"
+clipboard = "0.5"
 
 [dev-dependencies]
 tempfile = "3.8"

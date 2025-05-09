@@ -43,7 +43,7 @@ rich-prompt generate --path /path/to/project
 
 | Option | Description |
 |--------|-------------|
-| `--path` | 📂 Root directory to scan (required) |
+| `--path` | 📂 Root directory to scan (optional, by default current directory) |
 | `--ext` | 📑 File extensions to include (optional, include all files if not specified) |
 | `--exclude` | 🚫 Patterns to exclude (optional, exclude none if not specified) |
 | `--output` | 💾 File path to save output (optional) |

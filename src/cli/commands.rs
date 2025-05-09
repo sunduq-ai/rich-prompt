@@ -157,7 +157,6 @@ fn generate_context(config: &ContextConfig) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
     fn test_cli_parsing() {

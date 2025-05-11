@@ -4,6 +4,8 @@
 
 A Rust CLI tool that transforms your project files into perfectly formatted context blocks for Large Language Models. Ideal for code reviews, refactoring assistance, and technical discussions with AI.
 
+<a href="https://asciinema.org/a/718859" target="_blank"><img src="https://asciinema.org/a/718859.svg" /></a>
+
 ## ✨ Features
 
 - 📁 **Smart File Selection** - Automatically scan and select files with specific extensions

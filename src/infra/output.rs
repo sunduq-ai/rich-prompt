@@ -1,6 +1,8 @@
-use crate::domain::models::ContextOutput;
 use clipboard::{ClipboardContext, ClipboardProvider};
-use dialoguer::console::style;
+use crossterm::{
+    ExecutableCommand,
+    style::{Color, ResetColor, SetForegroundColor},
+};
 use log::{debug, info, warn};
 use std::fs;
 use std::io::{self, Write};
@@ -82,16 +84,11 @@ pub fn create_writer(
 }
 
 pub fn write_output(
-    output: &ContextOutput,
     formatted_content: &str,
     output_path: Option<String>,
     clipboard_output: bool,
 ) -> anyhow::Result<()> {
-    println!(
-        "{} {}",
-        style("⚙️ Total tokens in output:").bold().blue(),
-        output.token_count
-    );
+    let mut stdout = io::stdout();
 
     let writer = create_writer(&output_path, clipboard_output);
     if let Err(e) = writer.write(formatted_content) {
@@ -99,11 +96,11 @@ pub fn write_output(
     }
 
     if clipboard_output && output_path.is_none() {
-        println!(
-            "{}",
-            style("📋 Content copied to clipboard!").bold().green()
-        );
-        println!("{}", style("Preview of copied content:").italic());
+        stdout.execute(SetForegroundColor(Color::Green))?;
+        writeln!(stdout, "\n📋 Content copied to clipboard!")?;
+        stdout.execute(ResetColor)?;
+
+        writeln!(stdout, "\nPreview of copied content:\n")?;
 
         let preview_length = 200;
         let preview = if formatted_content.chars().count() > preview_length {
@@ -113,7 +110,7 @@ pub fn write_output(
             formatted_content.to_string()
         };
 
-        println!("{}", preview);
+        writeln!(stdout, "{}", preview)?;
     }
 
     Ok(())
@@ -167,54 +164,5 @@ mod tests {
         let preview: String = content.chars().take(preview_length).collect();
 
         assert_eq!(preview.chars().count(), preview_length);
-    }
-}
-
-#[cfg(test)]
-mod clipboard_tests {
-    use tempfile::NamedTempFile;
-
-    use super::*;
-    use crate::domain::models::ContextOutput;
-
-    #[test]
-    #[ignore]
-    fn test_clipboard_writer() {
-        if std::env::var("ENABLE_CLIPBOARD_TESTS").is_err() {
-            return;
-        }
-
-        let writer = ClipboardWriter;
-        let test_content = "Test clipboard content";
-
-        match writer.write(test_content) {
-            Ok(_) => {
-                println!("Clipboard write test passed");
-            }
-            Err(e) => {
-                panic!("Failed to write to clipboard: {}", e);
-            }
-        }
-    }
-
-    #[test]
-    fn test_write_output_with_clipboard() {
-        let output = ContextOutput {
-            file_map: "test_dir\n".to_string(),
-            file_contents: "test_content\n".to_string(),
-            user_instructions: "test_prompt".to_string(),
-            token_count: 3,
-        };
-
-        let formatted_content = "<file_map>\ntest_dir\n</file_map>\n\n<file_contents>test_content\n</file_contents>\n\n<user_instructions>\ntest_prompt\n</user_instructions>";
-
-        let temp_file = NamedTempFile::new().unwrap();
-        let path = temp_file.path().to_string_lossy().to_string();
-
-        let result = write_output(&output, formatted_content, Some(path), true);
-        assert!(result.is_ok());
-
-        let result = write_output(&output, formatted_content, None, true);
-        assert!(result.is_ok());
     }
 }

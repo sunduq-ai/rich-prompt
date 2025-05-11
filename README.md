@@ -19,6 +19,11 @@ A Rust CLI tool that transforms your project files into perfectly formatted cont
 
 ### 📥 From Cargo
 
+#### For linux make sure to run following command to install X11
+```bash
+sudo apt-get install libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev
+```
+#### For all operating systems run following
 ```bash
 cargo install rich-prompt
 ```
